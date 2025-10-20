@@ -51,7 +51,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/hotstuff-controller:latest
             ${{ secrets.DOCKER_USERNAME }}/hotstuff-controller:${{ steps.meta.outputs.SHORT_SHA }}
-          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-from: type=gha
           
       - name: Build and push worker image
         uses: docker/build-push-action@v6
@@ -62,4 +62,4 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/hotstuff-worker:latest
             ${{ secrets.DOCKER_USERNAME }}/hotstuff-worker:${{ steps.meta.outputs.SHORT_SHA }}
-          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-from: type=gha
