@@ -40,6 +40,12 @@ jobs:
           echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> "$GITHUB_OUTPUT"
           echo "SHORT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
+      - name: Generate SSH keys temp
+        run: |
+          if [ ! -f scripts/id ]; then
+            ssh-keygen -t ed25519 -C "hotstuff-test" -f scripts/id -N ""
+          fi
+
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push controller image
