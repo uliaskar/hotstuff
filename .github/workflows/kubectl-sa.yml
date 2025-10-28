@@ -13,7 +13,7 @@ jobs:
       - name: Create kubectl config
         run: |
           cat << EOF >> ~/.kube/kubeconfig.yaml
-          ${{ secrets.KUBECONFIG_SA }}
+          ${{ secrets.KUBE_CONFIG }}
           EOF
       - name: Echo pods
         run: |
