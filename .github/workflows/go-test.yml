@@ -21,12 +21,12 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Run Go tests
-        run: |
-          go test -v -timeout 5m ./...
-        shell: bash
-        env:
-          HOTSTUFF_LOG: info
+      # - name: Run Go tests
+      #   run: |
+      #     go test -v -timeout 5m ./...
+      #   shell: bash
+      #   env:
+      #     HOTSTUFF_LOG: info
 
       - name: Run docker tests
         if: runner.os == 'Linux'

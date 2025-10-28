@@ -7,10 +7,33 @@ jobs:
     name: Verify kubernetes
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v3
-      - name: Echo pods
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Kubernetes connectivity
         run: |
-          kubectl get pods
-      - name: Echo deployments
+          echo "Checking Kubernetes access..."
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Apply Kubernetes manifests
         run: |
-          kubectl get deployments
+          echo "Applying manifests..."
+          kubectl apply -n apps -f scripts/
+
+
+      - name: Wait for pods to become ready
+        run: |
+          kubectl rollout status deployment/hotstuff-controller -n apps
+          kubectl rollout status deployment/hotstuff-worker -n apps
+
+
+      - name: Verify deployments
+        run: |
+          kubectl get pods -n apps -o wide
+          kubectl get svc -n apps
+
+      - name: Cleanup old resources
+        run: |
+          kubectl delete -n apps -f scripts/ --ignore-not-found=true
+

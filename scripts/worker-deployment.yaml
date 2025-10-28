@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotstuff-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hotstuff-worker
+  template:
+    metadata:
+      labels:
+        app: hotstuff-worker
+    spec:
+      containers:
+        - name: worker
+          image: uliaskar/github-ci/hotstuff-worker:latest #update path later
+          imagePullPolicy: Always
+          
