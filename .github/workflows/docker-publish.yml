@@ -52,8 +52,8 @@ jobs:
           file: scripts/Dockerfile.controller
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/github-ci/hotstuff-controller:latest
-            ${{ secrets.DOCKER_USERNAME }}/github-ci/hotstuff-controller:${{ steps.meta.outputs.SHORT_SHA }}
+            ${{ secrets.DOCKER_USERNAME }}/hotstuff-controller:latest
+            ${{ secrets.DOCKER_USERNAME }}/hotstuff-controller:${{ steps.meta.outputs.SHORT_SHA }}
           cache-from: type=gha
           
       - name: Build and push worker image
@@ -63,6 +63,6 @@ jobs:
           file: scripts/Dockerfile.worker
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/github-ci/hotstuff-worker:latest
-            ${{ secrets.DOCKER_USERNAME }}/github-ci/hotstuff-worker:${{ steps.meta.outputs.SHORT_SHA }}
+            ${{ secrets.DOCKER_USERNAME }}/hotstuff-worker:latest
+            ${{ secrets.DOCKER_USERNAME }}/hotstuff-worker:${{ steps.meta.outputs.SHORT_SHA }}
           cache-from: type=gha
