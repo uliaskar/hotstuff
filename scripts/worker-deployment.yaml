@@ -16,4 +16,11 @@ spec:
         - name: worker
           image: uliaskar/hotstuff-worker:latest #update path later
           imagePullPolicy: Always
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           

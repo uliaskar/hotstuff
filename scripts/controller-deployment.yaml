@@ -17,3 +17,12 @@ spec:
         image: uliaskar/hotstuff-controller:latest # update path later
         imagePullPolicy: Always
         command: ["/bin/sh", "-c", "sleep infinity"]
+        ports:
+            - containerPort: 8080
+        securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault  
