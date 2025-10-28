@@ -19,7 +19,9 @@ jobs:
       - name: Apply Kubernetes manifests
         run: |
           echo "Applying manifests..."
-          kubectl apply -n apps -f scripts/
+          kubectl apply -n apps -f scripts/controller-deployment.yaml
+          kubectl apply -n apps -f scripts/worker-deployment.yaml
+#         kubectl apply -n apps -f scripts/controller-service.yaml
 
 
       - name: Wait for pods to become ready
