@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: worker
-          image: uliaskar/github-ci/hotstuff-worker:latest #update path later
+          image: uliaskar/hotstuff-worker:latest #update path later
           imagePullPolicy: Always
           

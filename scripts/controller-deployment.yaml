@@ -14,5 +14,6 @@ spec:
     spec:
       containers:
       - name: controller
-        image: uliaskar/github-ci/hotstuff-controller:latest # update path later
+        image: uliaskar/hotstuff-controller:latest # update path later
+        imagePullPolicy: Always
         command: ["/bin/sh", "-c", "sleep infinity"]
