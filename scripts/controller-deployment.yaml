@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotstuff-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hotstuff-controller
+  template:
+    metadata:
+      labels:
+        app: hotstuff-controller
+    spec:
+      containers:
+      - name: controller
+        image: uliaskar/github-ci/hotstuff-controller:latest # update path later
+        command: ["/bin/sh", "-c", "sleep infinity"]
