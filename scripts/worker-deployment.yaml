@@ -17,7 +17,8 @@ spec:
           image: uliaskar/hotstuff-worker:latest #update path later
           imagePullPolicy: Always
           securityContext:
-            runAsNonRoot: true
+            runAsUser: 0
+            runAsNonRoot: false
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
