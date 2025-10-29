@@ -42,5 +42,6 @@ jobs:
 
       - name: Cleanup old resources
         run: |
-          kubectl delete -n apps -f scripts/ --ignore-not-found=true
+          kubectl delete -n apps -f cripts/controller-deployment.yaml --ignore-not-found=true
+          kubectl delete -n apps -f cripts/worker-deployment.yaml --ignore-not-found=true
 
