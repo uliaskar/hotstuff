@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         app: hotstuff-controller
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: controller
@@ -27,3 +31,7 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault  
+      - name: node-exporter   # the sidecar
+        image: prom/node-exporter:latest
+        ports:
+            - containerPort: 9100
