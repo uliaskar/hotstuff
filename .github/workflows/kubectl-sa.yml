@@ -39,7 +39,7 @@ jobs:
       - name: Wait for Prometheus pod to be ready
         run: |
           kubectl rollout status deployment/prometheus -n monitoring
-          kubectl rollout restart deployment prometheus -n monitoring
+          kubectl rollout status deployment prometheus -n monitoring
 
       - name: Verify deployments
         run: |
