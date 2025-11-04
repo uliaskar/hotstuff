@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         app: hotstuff-worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: worker
@@ -28,8 +32,4 @@ spec:
           image: prom/node-exporter:latest
           ports:
             - containerPort: 9100
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9100"
-        prometheus.io/path: "/metrics"
           
