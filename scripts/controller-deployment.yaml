@@ -11,10 +11,6 @@ spec:
     metadata:
       labels:
         app: hotstuff-controller
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9100"
-        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: controller
@@ -35,3 +31,7 @@ spec:
         image: prom/node-exporter:latest
         ports:
             - containerPort: 9100
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: "/metrics"
