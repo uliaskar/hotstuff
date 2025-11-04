@@ -48,7 +48,7 @@ jobs:
 
       - name: Check Prometheus targets
         run: |
-          kubectl port-forward -n monitoring svc/prometheus 9090 &
+          kubectl port-forward -n monitoring svc/prometheus 9090:80 &
           sleep 5
           curl http://localhost:9090/api/v1/targets | jq .
 
