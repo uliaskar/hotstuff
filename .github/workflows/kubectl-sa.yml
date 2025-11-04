@@ -48,8 +48,12 @@ jobs:
           kubectl get pods -n monitoring -o wide
           kubectl get svc -n monitoring
 
+      
+
       - name: Check Prometheus targets
         run: |
+          kubectl get configmap prometheus-config -n monitoring -o yaml | grep -A 15 "scrape_configs"
+          kubectl exec -n monitoring deploy/prometheus -- cat /etc/prometheus/prometheus.yml
           kubectl port-forward -n monitoring svc/prometheus 9090:80 &
           sleep 5
           curl http://localhost:9090/api/v1/targets | jq .
