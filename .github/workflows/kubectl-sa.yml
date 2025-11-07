@@ -69,7 +69,7 @@ jobs:
 
       - name: Port-forward Grafana
         run: |
-          kubectl port-forward -n monitoring svc/grafana 3000:3000 &
+          kubectl port-forward -n monitoring svc/grafana 3001:80 &
           sleep 5
           curl -s http://localhost:3000/api/health | jq .
 
