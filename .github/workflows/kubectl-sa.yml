@@ -81,7 +81,7 @@ jobs:
       
       - name: Pause for inspection
         run: |
-          sleep 180  # Wait 3 minutes before cleanup
+          sleep 600  # Wait 3 minutes before cleanup
       
 
       - name: Cleanup old resources
