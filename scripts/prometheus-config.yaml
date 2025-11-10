@@ -32,7 +32,5 @@ data:
     - url: https://prometheus-prod-39-prod-eu-north-0.grafana.net/api/prom/push
       basic_auth:
         username: 2789433
-        password:
-          name: grafana-token  
-          key: api-key 
+        password_file: /etc/secrets/grafana-token/api-key
 
