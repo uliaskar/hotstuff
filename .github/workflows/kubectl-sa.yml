@@ -31,10 +31,10 @@ jobs:
           kubectl apply -n monitoring -f scripts/prometheus-service.yaml
           kubectl apply -f scripts/prometheus-rbac.yaml
 
-      - name: Deploy Grafana
-        run: |
-          kubectl apply -n monitoring -f scripts/grafana/grafana-deployment.yaml
-          kubectl apply -n monitoring -f scripts/grafana/grafana-service.yaml
+#      - name: Deploy Grafana
+#        run: |
+#          kubectl apply -n monitoring -f scripts/grafana/grafana-deployment.yaml
+#          kubectl apply -n monitoring -f scripts/grafana/grafana-service.yaml
 
       - name: Wait for pods to become ready
         run: |
@@ -46,9 +46,9 @@ jobs:
           kubectl rollout status deployment/prometheus -n monitoring
           kubectl rollout status deployment prometheus -n monitoring
 
-      - name: Wait for Grafana pod to be ready
-        run: |
-          kubectl rollout status deployment/grafana -n monitoring
+#      - name: Wait for Grafana pod to be ready
+#        run: |
+#          kubectl rollout status deployment/grafana -n monitoring
 
       - name: Verify deployments
         run: |
@@ -67,12 +67,12 @@ jobs:
           sleep 5 
           curl http://localhost:9090/api/v1/targets | jq .
 
-      - name: Port-forward Grafana
-        run: |
-          kubectl get svc -n monitoring grafana -o wide
-#         kubectl port-forward -n monitoring svc/grafana 3001:80 &
-#         sleep 5
-#         curl -s http://localhost:3001/api/health | jq .
+#      - name: Port-forward Grafana
+#        run: |
+#          kubectl get svc -n monitoring grafana -o wide
+#          kubectl port-forward -n monitoring svc/grafana 3001:80 &
+#          sleep 5
+#          curl -s http://localhost:3001/api/health | jq .
 
       - name: Run Hotstuff
         run: |
@@ -96,8 +96,8 @@ jobs:
           kubectl delete -n monitoring -f scripts/prometheus-service.yaml --ignore-not-found=true
           kubectl delete -n monitoring -f scripts/prometheus-config.yaml --ignore-not-found=true
 
-      - name: Cleanup Grafana resources
-        run: |
-          kubectl delete -n monitoring -f scripts/grafana/grafana-deployment.yaml --ignore-not-found=true
-          kubectl delete -n monitoring -f scripts/grafana/grafana-service.yaml --ignore-not-found=true
+#      - name: Cleanup Grafana resources
+#        run: |
+#          kubectl delete -n monitoring -f scripts/grafana/grafana-deployment.yaml --ignore-not-found=true
+#          kubectl delete -n monitoring -f scripts/grafana/grafana-service.yaml --ignore-not-found=true
       
