@@ -27,3 +27,9 @@ data:
             regex: "([^:]+)(?::\\d+)?;(\\d+)"
             replacement: "$1:$2"
             target_label: __address__
+    
+    remote_write:
+    - url: https://prometheus-prod-39-prod-eu-north-0.grafana.net/api/prom/push
+      basic_auth:
+        username: 2789433
+        password: ${{ secrets.GRAFANA_TOKEN }}
