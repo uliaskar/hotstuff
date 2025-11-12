@@ -17,5 +17,8 @@ jobs:
       - name: Cleanup pods from apps and monitoring namespaces
         run: |
           echo "Detected cancelled or failed run (id=${{ github.event.workflow_run.id }})."
+          kubectl scale deployment hotstuff-controller hotstuff-worker --replicas=0 -n apps || true
+          kubectl scale deployment prometheus --replicas=0 -n monitoring || true
+          
           kubectl delete pods --all -n apps --ignore-not-found=true
           kubectl delete pods --all -n monitoring --ignore-not-found=true
