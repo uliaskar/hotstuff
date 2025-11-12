@@ -14,12 +14,14 @@ config: {
 
 	// Parameter sweeps
 	params: {
-		consensus: ["chainedhotstuff"]
+		consensus: ["chainedhotstuff", "simplehotstuff", "fasthotstuff"]
 		leaderRotation: ["round-robin", "fixed"]
 		crypto: ["ecdsa", "eddsa"]
 		communication: ["clique"]
 		byz: [
 			{strategy: "", targets: []},
+			{strategy: "fork", targets: [4]},
+			{strategy: "increaseview", targets: [1]},
 			{strategy: "silentproposer", targets: [2]},
 		]
 	}
