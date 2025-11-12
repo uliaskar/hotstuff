@@ -1,0 +1,17 @@
+name: Pods cleanup (optional)
+on:
+  workflow_run:
+    workflows: ["Verify Kubernetes"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  cleanup_on_cancel:
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'cancelled' || github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Cleanup pods from apps and monitoring namespaces
+        run: |
+          echo "Detected cancelled or failed run (id=${{ github.event.workflow_run.id }})."
+          kubectl delete pods --all -n apps --ignore-not-found=true
+          kubectl delete pods --all -n monitoring --ignore-not-found=true
