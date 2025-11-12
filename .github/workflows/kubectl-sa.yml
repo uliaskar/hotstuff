@@ -79,18 +79,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          CONTROLLER_POD=$(kubectl get pods -n apps -l app=hotstuff-controller -o jsonpath="{.items[0].metadata.name}")
-
           for CONFIG in scripts/test_configs/*.cue; do
+            CONTROLLER_POD=$(kubectl get pods -n apps -l app=hotstuff-controller -o jsonpath="{.items[0].metadata.name}")
             BASENAME=$(basename "$CONFIG")
-
+            echo ">>> Running experiment $BASENAME..."
             kubectl exec -n apps "$CONTROLLER_POD" -- hotstuff run --config="/config/$BASENAME"
 
           done
       
       - name: Pause for inspection
         run: |
-          sleep 600  # Wait 3 minutes before cleanup
+          sleep 300  # Wait 5 minutes before cleanup
       
 
       - name: Cleanup old resources
