@@ -1,0 +1,12 @@
+FROM golang:1.23-alpine AS builder
+WORKDIR /app
+COPY scripts/exporter/exporter.go .
+RUN go mod init hotstuff-exporter || true
+RUN go mod tidy
+RUN go build -o /hotstuff-exporter prom_exporter.go
+
+FROM alpine
+WORKDIR /
+COPY --from=builder /hotstuff-exporter /usr/local/bin/hotstuff-exporter
+EXPOSE 9108
+ENTRYPOINT ["hotstuff-exporter"]

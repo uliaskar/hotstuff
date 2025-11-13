@@ -35,4 +35,9 @@ spec:
         image: prom/node-exporter:latest
         ports:
             - containerPort: 9100
+      volumes:
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: hotstuff-data-pvc
+
       

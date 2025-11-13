@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotstuff-exporter
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hotstuff-exporter
+  template:
+    metadata:
+      labels:
+        app: hotstuff-exporter
+    spec:
+      containers:
+        - name: exporter
+          image: uliaskar/hotstuff-exporter:latest
+          args: ["--file=/data/measurements.json", "--addr=:9108"]
+          ports:
+            - containerPort: 9108
+          volumeMounts:
+            - name: shared-data
+              mountPath: /data
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: hotstuff-data-pvc
