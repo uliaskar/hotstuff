@@ -1,0 +1,12 @@
+name: Prometheus exporter deployment
+on: 
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Workflow Skeleton Placeholder
+        run: echo "Placeholder"
