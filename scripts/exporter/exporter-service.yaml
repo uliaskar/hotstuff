@@ -3,9 +3,18 @@ kind: Service
 metadata:
   name: hotstuff-exporter
   namespace: apps
+  labels:
+    app: hotstuff-controller
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9108"
+    prometheus.io/path: "/metrics"
 spec:
   selector:
-    app: hotstuff-exporter
+    app: hotstuff-controller
   ports:
-    - port: 9108
+    - name: metrics
+      port: 9108
       targetPort: 9108
+      protocol: TCP
+  type: ClusterIP
