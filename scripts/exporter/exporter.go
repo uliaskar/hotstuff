@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 )
 
 var (
-	filePath  = flag.String("file", "hotstuff/local/measurements.json", "Path to Hotstuff measurements.json")
+	filePath  = flag.String("file", "local/measurements.json", "Path to Hotstuff measurements.json")
 	addr      = flag.String("addr", ":9108", "Listen address (host:port)")
 	namespace = flag.String("namespace", "hotstuff", "Metrics namespace")
 )
@@ -26,12 +27,50 @@ var (
 type eventEnvelope struct {
 	Type  string          `json:"@type"`
 	Event json.RawMessage `json:"Event"`
+
+	// throughput measurements
+	Commits  *string `json:"Commits,omitempty"`
+	Commands *string `json:"Commands,omitempty"`
+	Duration *string `json:"Duration,omitempty"`
+	// latency measurements
+	Latency  *float64 `json:"Latency,omitempty"`
+	Variance *float64 `json:"Variance,omitempty"`
+	Count    *string  `json:"Count,omitempty"`
 }
 
 type inner struct {
 	ID        *float64 `json:"ID"`
 	Client    *bool    `json:"Client"`
 	Timestamp *string  `json:"Timestamp"`
+}
+
+type config struct {
+	Crypto            string   `json:"Crypto"`
+	Consensus         string   `json:"Consensus"`
+	LeaderRotation    string   `json:"LeaderRotation"`
+	BatchSize         float64  `json:"BatchSize"`
+	ConnectTimeout    string   `json:"ConnectTimeout"`
+	InitialTimeout    string   `json:"InitialTimeout"`
+	MaxTimeout        string   `json:"MaxTimeout"`
+	TimeoutSamples    float64  `json:"TimeoutSamples"`
+	TimeoutMultiplier float64  `json:"TimeoutMultiplier"`
+	ByzantineStrategy string   `json:"ByzantineStrategy"`
+	SharedSeed        string   `json:"SharedSeed"`
+	Modules           []string `json:"Modules"`
+	Locations         []string `json:"Locations"`
+	TreePositions     []int    `json:"TreePositions"`
+	BranchFactor      float64  `json:"BranchFactor"`
+	TreeDelta         string   `json:"TreeDelta"`
+}
+
+type throughputMeasurement struct {
+	ID        *float64 `json:"ID,omitempty"`
+	Client    *bool    `json:"Client,omitempty"`
+	Timestamp *string  `json:"Timestamp,omitempty"`
+
+	Throughput float64 `json:"Throughput,omitempty"` // e.g. commands/sec
+	Duration   float64 `json:"Duration,omitempty"`   // e.g. seconds
+	Count      float64 `json:"Count,omitempty"`      // e.g. number of commands
 }
 
 // collector that reads file on every scrape
@@ -46,6 +85,13 @@ type fileCollector struct {
 	p95Gap       *prometheus.Desc
 	readErrors   *prometheus.Desc
 	parseErrors  *prometheus.Desc
+
+	configInfo         *prometheus.Desc
+	configBatchSize    *prometheus.Desc
+	configBranchFactor *prometheus.Desc
+
+	throughput *prometheus.Desc
+	latency    *prometheus.Desc
 }
 
 func newCollector(file, ns string) *fileCollector {
@@ -56,7 +102,7 @@ func newCollector(file, ns string) *fileCollector {
 		file:      file,
 		namespace: ns,
 		eventsInFile: prometheus.NewDesc(
-			prometheus.BuildFQName(ns, "", "events_in_file_total"), "Number of events currenctly present in the measurements file", lblsEv, nil),
+			prometheus.BuildFQName(ns, "", "events_in_file_total"), "Number of events currently present in the measurements file", lblsEv, nil),
 		lastTS: prometheus.NewDesc(
 			prometheus.BuildFQName(ns, "", "last_event_timestamp_seconds"),
 			"Unix timestamp of newest event in file",
@@ -80,6 +126,34 @@ func newCollector(file, ns string) *fileCollector {
 			prometheus.BuildFQName(ns, "", "parse_errors_total"),
 			"Scrape-time JSON parse errors",
 			nil, nil),
+		configInfo: prometheus.NewDesc(
+			prometheus.BuildFQName(ns, "", "config_info"),
+			"Static configuration of this HotStuff run (labels only; value is always 1)",
+			[]string{"crypto", "consensus", "leader_rotation", "byzantine_strategy"},
+			nil,
+		),
+		configBatchSize: prometheus.NewDesc(
+			prometheus.BuildFQName(ns, "", "config_batch_size"),
+			"Batch size configured for this run",
+			nil, nil,
+		),
+		configBranchFactor: prometheus.NewDesc(
+			prometheus.BuildFQName(ns, "", "config_branch_factor"),
+			"Branch factor of the tree configured for this run",
+			nil, nil,
+		),
+		throughput: prometheus.NewDesc(
+			prometheus.BuildFQName(ns, "", "throughput_ops_per_second"),
+			"Throughput reported by ThroughputMeasurement events (ops/sec)",
+			[]string{"event_type", "client"},
+			nil,
+		),
+		latency: prometheus.NewDesc(
+			prometheus.BuildFQName(ns, "", "latency_seconds"),
+			"Latency reported by LatencyMeasurement events (seconds)",
+			[]string{"event_type", "client"},
+			nil,
+		),
 	}
 }
 
@@ -91,11 +165,17 @@ func (c *fileCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.p95Gap
 	ch <- c.readErrors
 	ch <- c.parseErrors
+	ch <- c.configInfo
+	ch <- c.configBatchSize
+	ch <- c.configBranchFactor
+	ch <- c.throughput
+	ch <- c.latency
 }
 
 func (c *fileCollector) Collect(ch chan<- prometheus.Metric) {
 	raw, err := os.ReadFile(c.file)
 	if err != nil {
+		fmt.Printf("read error opening %s: %v\n", c.file, err) // <-- ADD THIS LINE
 		ch <- prometheus.MustNewConstMetric(c.readErrors, prometheus.GaugeValue, 1)
 		return
 	}
@@ -104,6 +184,33 @@ func (c *fileCollector) Collect(ch chan<- prometheus.Metric) {
 	if !ok {
 		ch <- prometheus.MustNewConstMetric(c.parseErrors, prometheus.GaugeValue, 1)
 		return
+	}
+
+	var cfg *config
+
+	for _, ev := range events {
+		var candidate config
+		if err := json.Unmarshal(ev.Event, &candidate); err == nil && candidate.Crypto != "" && candidate.Consensus != "" {
+			cfg = &candidate
+			break
+		}
+	}
+
+	if cfg != nil {
+		// label-only info metric
+		ch <- prometheus.MustNewConstMetric(
+			c.configInfo,
+			prometheus.GaugeValue,
+			1,
+			cfg.Crypto,
+			cfg.Consensus,
+			cfg.LeaderRotation,
+			cfg.ByzantineStrategy,
+		)
+
+		// numeric configs
+		ch <- prometheus.MustNewConstMetric(c.configBatchSize, prometheus.GaugeValue, cfg.BatchSize)
+		ch <- prometheus.MustNewConstMetric(c.configBranchFactor, prometheus.GaugeValue, cfg.BranchFactor)
 	}
 
 	// aggregate
@@ -115,6 +222,8 @@ func (c *fileCollector) Collect(ch chan<- prometheus.Metric) {
 	lastTSbyType := map[string]float64{}
 	lastIdByType := map[string]float64{}
 	tsByType := map[string][]float64{}
+	throughputByKey := map[key][]float64{}
+	latencyByKey := map[key][]float64{}
 
 	for _, ev := range events {
 		evType := normalizeType(ev.Type)
@@ -127,6 +236,27 @@ func (c *fileCollector) Collect(ch chan<- prometheus.Metric) {
 			client = "true"
 		}
 		counts[key{t: evType, c: client}]++
+
+		if evType == "ThroughputMeasurement" {
+			if ev.Commands != nil && ev.Duration != nil {
+				cmds, err1 := strconv.ParseFloat(*ev.Commands, 64)
+				dur, err2 := time.ParseDuration(*ev.Duration)
+				if err1 == nil && err2 == nil && dur > 0 {
+					throughput := cmds / dur.Seconds()
+					if !math.IsNaN(throughput) && !math.IsInf(throughput, 0) {
+						// store, don't emit yet
+						k := key{t: evType, c: client}
+						throughputByKey[k] = append(throughputByKey[k], throughput)
+					}
+				}
+			}
+		}
+		if evType == "LatencyMeasurement" {
+			if ev.Latency != nil {
+				k := key{t: evType, c: client}
+				latencyByKey[k] = append(latencyByKey[k], *ev.Latency)
+			}
+		}
 
 		// timestamp
 		if in.Timestamp != nil {
@@ -149,6 +279,48 @@ func (c *fileCollector) Collect(ch chan<- prometheus.Metric) {
 	// emit counts
 	for k, v := range counts {
 		ch <- prometheus.MustNewConstMetric(c.eventsInFile, prometheus.GaugeValue, float64(v), k.t, k.c)
+	}
+	// emit throughput (one sample per label set)
+	for k, vals := range throughputByKey {
+		if len(vals) == 0 {
+			continue
+		}
+
+		// choose how to aggregate: avg, max, last, etc.
+		// Here we'll use average throughput over all ThroughputMeasurement events.
+		var sum float64
+		for _, v := range vals {
+			sum += v
+		}
+		avg := sum / float64(len(vals))
+
+		ch <- prometheus.MustNewConstMetric(
+			c.throughput,
+			prometheus.GaugeValue,
+			avg,
+			k.t,
+			k.c,
+		)
+	}
+	// emit latency (one sample per label set)
+	for k, vals := range latencyByKey {
+		if len(vals) == 0 {
+			continue
+		}
+
+		var sum float64
+		for _, v := range vals {
+			sum += v
+		}
+		avg := sum / float64(len(vals))
+
+		ch <- prometheus.MustNewConstMetric(
+			c.latency,
+			prometheus.GaugeValue,
+			avg,
+			k.t,
+			k.c,
+		)
 	}
 
 	// emit last ts / id, and p50/p95 of inter-event gaps
