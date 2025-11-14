@@ -29,7 +29,7 @@ jobs:
           kubectl apply -n monitoring -f scripts/prometheus-deployment.yaml
           kubectl apply -n monitoring -f scripts/prometheus-service.yaml
           kubectl apply -f scripts/prometheus-rbac.yaml
-          kubectl apply -f scripts/exporter-service.yaml -n apps
+          kubectl apply -f scripts/exporter/exporter-service.yaml -n apps
 
 #      - name: Deploy Grafana
 #        run: |
@@ -53,17 +53,11 @@ jobs:
           kubectl get pods -n monitoring -o wide
           kubectl get svc -n monitoring
 
-      
-      - name: Apply Kubernetes manifests
-        run: |
-          echo "Applying manifests..."
-          kubectl apply -n monitoring -f scripts/exporter/
 
 
       - name: Verify Prometheus exporter metrics
         run: |
-          kubectl rollout status deployment/hotstuff-exporter -n monitoring
-          kubectl port-forward svc/hotstuff-exporter -n monitoring 9108:9108 &
+          kubectl port-forward svc/hotstuff-exporter -n apps 9108:9108 &
           sleep 3
           curl -s http://localhost:9108/metrics | head -20
 
