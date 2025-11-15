@@ -107,5 +107,4 @@ jobs:
 
       - name: Cleanup exporter resources
         run: |
-          kubectl delete -n apps -f scripts/exporter/exporter-deployment.yaml --ignore-not-found=true
           kubectl delete -n apps -f scripts/exporter/exporter-service.yaml --ignore-not-found=true
