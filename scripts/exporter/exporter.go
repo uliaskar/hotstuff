@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	filePath  = flag.String("file", "local/measurements.json", "Path to Hotstuff measurements.json")
+	filePath  = flag.String("file", "data/local/measurements.json", "Path to Hotstuff measurements.json")
 	addr      = flag.String("addr", ":9108", "Listen address (host:port)")
 	namespace = flag.String("namespace", "hotstuff", "Metrics namespace")
 )
