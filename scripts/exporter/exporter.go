@@ -33,9 +33,10 @@ type eventEnvelope struct {
 	Commands *string `json:"Commands,omitempty"`
 	Duration *string `json:"Duration,omitempty"`
 	// latency measurements
-	Latency  *float64 `json:"Latency,omitempty"`
-	Variance *float64 `json:"Variance,omitempty"`
-	Count    *string  `json:"Count,omitempty"`
+	Latency *float64 `json:"Latency,omitempty"`
+	//Variance *float64 `json:"Variance,omitempty"`
+	Variance *FloatOrNaN `json:"Variance,omitempty"`
+	Count    *string     `json:"Count,omitempty"`
 }
 
 type inner struct {
@@ -72,6 +73,52 @@ type throughputMeasurement struct {
 	Duration   float64 `json:"Duration,omitempty"`   // e.g. seconds
 	Count      float64 `json:"Count,omitempty"`      // e.g. number of commands
 }
+
+//-------Ulia'skar's Addition Below-------//
+type FloatOrNaN struct {
+	Valid bool
+	Value float64
+	Raw   string
+}
+
+func (f *FloatOrNaN) UnmarshalJSON(b []byte) error {
+	// null → leave as zero-value
+	if string(b) == "null" {
+		return nil
+	}
+
+	// Try as number first
+	var num float64
+	if err := json.Unmarshal(b, &num); err == nil {
+		f.Valid = true
+		f.Value = num
+		f.Raw = string(b)
+		return nil
+	}
+
+	// Try as string
+	var s string
+	if err := json.Unmarshal(b, &s); err == nil {
+		f.Raw = s
+
+		// Treat "NaN" (or empty) as "no usable value", but not an error
+		if s == "NaN" || s == "" {
+			return nil
+		}
+
+		// If it's a numeric string, parse it
+		if v, err2 := strconv.ParseFloat(s, 64); err2 == nil {
+			f.Valid = true
+			f.Value = v
+		}
+		return nil
+	}
+
+	// If it’s something weird, just ignore without failing the whole decode
+	return nil
+}
+
+//------------------------------//
 
 // collector that reads file on every scrape
 type fileCollector struct {
