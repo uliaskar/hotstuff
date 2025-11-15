@@ -56,7 +56,7 @@ jobs:
         run: |
           CONTROLLER_POD=$(kubectl get pods -n apps -l app=hotstuff-controller -o jsonpath="{.items[0].metadata.name}")
           kubectl exec -n apps $CONTROLLER_POD -- hotstuff run --config=/config/example_config.cue --output /data --measurement-interval=5s
-#         kubectl exec -n apps $CONTROLLER_POD -- cat /data/local/measurements.json
+          kubectl exec -n apps $CONTROLLER_POD -- cat /data/local/measurements.json
 
 
       # Veryfying simulation metrics (latency, throughput)
