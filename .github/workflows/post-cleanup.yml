@@ -14,16 +14,20 @@ jobs:
        (github.event.workflow_run.conclusion == 'cancelled' || 
         github.event.workflow_run.conclusion == 'failure'))
     steps:
-      - name: Cleanup pods from apps and monitoring namespaces
-        run: |
-          echo "Detected cancelled or failed run (id=${{ github.event.workflow_run.id }})."
-          kubectl scale deployment hotstuff-controller hotstuff-worker --replicas=0 -n apps || true
-          kubectl scale deployment prometheus --replicas=0 -n monitoring || true
-          
-          kubectl delete pods --all -n apps --ignore-not-found=true
-          kubectl delete pods --all -n monitoring --ignore-not-found=true
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Cleanup old resources
         run: |
-          kubectl delete svc hotstuff-exporter -n apps --ignore-not-found=true
-          kubectl delete deploy hotstuff-exporter -n apps --ignore-not-found=true
+          kubectl delete -n apps -f scripts/controller-deployment.yaml --ignore-not-found=true
+          kubectl delete -n apps -f scripts/worker-deployment.yaml --ignore-not-found=true
+
+      - name: Cleanup Prometheus resources
+        run: |
+          kubectl delete -n monitoring -f scripts/prometheus-deployment.yaml --ignore-not-found=true
+          kubectl delete -n monitoring -f scripts/prometheus-service.yaml --ignore-not-found=true
+          kubectl delete -n monitoring -f scripts/prometheus-config.yaml --ignore-not-found=true
+
+      - name: Cleanup exporter resources
+        run: |
+          kubectl delete -n apps -f scripts/exporter/exporter-service.yaml --ignore-not-found=true
