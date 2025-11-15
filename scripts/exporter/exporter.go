@@ -462,9 +462,11 @@ func parseEventsLenient(b []byte) ([]eventEnvelope, bool) {
 	if len(trim) > 0 && trim[0] == '[' {
 		dec := json.NewDecoder(bytes.NewReader(trim))
 		dec.UseNumber()
-		if err := dec.Decode(&arr); err == nil {
+		var err error
+		if err = dec.Decode(&arr); err == nil {
 			return arr, true
 		}
+		fmt.Printf("parseEventsLenient: array decode error: %v\n", err)
 	}
 
 	//
@@ -474,9 +476,11 @@ func parseEventsLenient(b []byte) ([]eventEnvelope, bool) {
 
 	dec := json.NewDecoder(strings.NewReader(wrapped))
 	dec.UseNumber()
-	if err := dec.Decode(&arr); err == nil {
+	var err error
+	if err = dec.Decode(&arr); err == nil {
 		return arr, true
 	}
+	fmt.Printf("parseEventsLenient: wrapped decode error: %v\n", err)
 	return nil, false
 }
 
