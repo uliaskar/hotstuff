@@ -10,6 +10,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
       - name: Verify Kubernetes connectivity
         run: |
           echo "Checking Kubernetes access..."
@@ -22,18 +23,15 @@ jobs:
           kubectl apply -n apps -f scripts/controller-deployment.yaml
           kubectl apply -n apps -f scripts/worker-deployment.yaml
 
-      - name: Deploy Prometheus
+      - name: Deploy Prometheus and exporter
         run: |
           kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -n monitoring -f scripts/prometheus-config.yaml
           kubectl apply -n monitoring -f scripts/prometheus-deployment.yaml
           kubectl apply -n monitoring -f scripts/prometheus-service.yaml
           kubectl apply -f scripts/prometheus-rbac.yaml
+          kubectl apply -f scripts/exporter/exporter-service.yaml -n apps
 
-#      - name: Deploy Grafana
-#        run: |
-#          kubectl apply -n monitoring -f scripts/grafana/grafana-deployment.yaml
-#          kubectl apply -n monitoring -f scripts/grafana/grafana-service.yaml
 
       - name: Wait for pods to become ready
         run: |
@@ -52,8 +50,24 @@ jobs:
           kubectl get pods -n monitoring -o wide
           kubectl get svc -n monitoring
 
-      
 
+      # Running simulation with example_config.cue
+      - name: Run Hotstuff 
+        run: |
+          CONTROLLER_POD=$(kubectl get pods -n apps -l app=hotstuff-controller -o jsonpath="{.items[0].metadata.name}")
+          kubectl exec -n apps $CONTROLLER_POD -- hotstuff run --config=/config/example_config.cue --output /data --measurement-interval=5s
+          kubectl exec -n apps $CONTROLLER_POD -- cat /data/local/measurements.json
+
+
+      # Veryfying simulation metrics (latency, throughput)
+      - name: Verify Prometheus exporter metrics 
+        run: |
+          echo "Veryfying the metrics"
+          kubectl port-forward svc/hotstuff-exporter -n apps 9108:9108 &
+          sleep 5
+          curl -s http://localhost:9108/metrics | grep -v '^# HELP' | grep -v '^# TYPE'
+    
+      # Veryfying pods metrics
       - name: Check Prometheus targets
         run: |
           kubectl get configmap prometheus-config -n monitoring -o yaml | grep -A 15 "scrape_configs"
@@ -61,21 +75,9 @@ jobs:
           kubectl port-forward -n monitoring svc/prometheus 9090:80 &
           sleep 5 
           curl http://localhost:9090/api/v1/targets | jq .
-
-#      - name: Port-forward Grafana
-#        run: |
-#          kubectl rollout status deployment/grafana -n monitoring
-#          kubectl get svc -n monitoring grafana -o wide
-#          kubectl port-forward -n monitoring svc/grafana 3001:80 &
-#          sleep 5
-#          curl -s http://localhost:3001/api/health | jq .
-
-      - name: Run Hotstuff
-        run: |
-          CONTROLLER_POD=$(kubectl get pods -n apps -l app=hotstuff-controller -o jsonpath="{.items[0].metadata.name}")
-          kubectl exec -n apps $CONTROLLER_POD -- hotstuff run --config=/config/example_config.cue
-      
-      - name: Run all Hotstuff experiment configs
+   
+      # Running simulations with .cue from scripts/test_configs/
+      - name: Run all Hotstuff experiment configs 
         run: |
           set -euo pipefail
 
@@ -91,7 +93,7 @@ jobs:
         run: |
           sleep 300  # Wait 5 minutes before cleanup
       
-
+      # Cleanup
       - name: Cleanup old resources
         run: |
           kubectl delete -n apps -f scripts/controller-deployment.yaml --ignore-not-found=true
@@ -103,8 +105,6 @@ jobs:
           kubectl delete -n monitoring -f scripts/prometheus-service.yaml --ignore-not-found=true
           kubectl delete -n monitoring -f scripts/prometheus-config.yaml --ignore-not-found=true
 
-#      - name: Cleanup Grafana resources
-#        run: |
-#          kubectl delete -n monitoring -f scripts/grafana/grafana-deployment.yaml --ignore-not-found=true
-#          kubectl delete -n monitoring -f scripts/grafana/grafana-service.yaml --ignore-not-found=true
-      
+      - name: Cleanup exporter resources
+        run: |
+          kubectl delete -n apps -f scripts/exporter/exporter-service.yaml --ignore-not-found=true

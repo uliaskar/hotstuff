@@ -4,8 +4,6 @@ name: CI/CD with Docker
 on: 
   workflow_dispatch:
 
-
-
 jobs:
   build:
 
@@ -66,3 +64,12 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/hotstuff-worker:latest
             ${{ secrets.DOCKER_USERNAME }}/hotstuff-worker:${{ steps.meta.outputs.SHORT_SHA }}
           cache-from: type=gha
+      
+      - name: Build and push exporter image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: scripts/exporter/Dockerfile.exporter
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/hotstuff-exporter:latest

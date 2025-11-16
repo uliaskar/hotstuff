@@ -16,6 +16,9 @@ spec:
         prometheus.io/port: "9100"
         prometheus.io/path: "/metrics"
     spec:
+      volumes:
+        - name: shared-data
+          emptyDir: {}
       containers:
       - name: controller
         image: uliaskar/hotstuff-controller:latest # update path later
@@ -31,8 +34,22 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault  
-      - name: node-exporter   # the sidecar
-        image: prom/node-exporter:latest
-        ports:
-            - containerPort: 9100
+        volumeMounts:
+            - name: shared-data
+              mountPath: /data
+#      - name: node-exporter   # the sidecar
+#        image: prom/node-exporter:latest
+#        ports:
+#            - containerPort: 9100
       
+      - name: exporter
+        image: uliaskar/hotstuff-exporter:latest # json output exporter sidecar
+        args: ["--file", "/data/local/measurements.json"]
+        ports:
+            - containerPort: 9108
+        volumeMounts:
+            - name: shared-data
+              mountPath: /data
+
+      
+
