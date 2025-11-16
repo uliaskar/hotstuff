@@ -29,11 +29,12 @@ data:
             target_label: __address__
       - job_name: 'hotstuff-exporter'
         static_configs:
-          - targets: ['hotstuff-exporter.monitoring.svc.cluster.local:9108']
+          - targets: ['hotstuff-exporter.apps.svc.cluster.local:9108']
     
     remote_write:
     - url: https://prometheus-prod-39-prod-eu-north-0.grafana.net/api/prom/push
       basic_auth:
         username: 2789433
         password_file: /etc/secrets/grafana-token/api-key
+
 
